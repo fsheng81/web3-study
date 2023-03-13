@@ -70,7 +70,12 @@ ABI编码 可以通过特定解码后，用 json 描述。
 
 deposits这些storage变量，都会记录到merkle tree中。
 
-（一个合约账户的storage，和merkle tree的关系？）
+> ### [以太坊的数据库存储](https://codechina.gitcode.host/programmer/blockchain-intro/9-Ethereum-database.html#以太坊的数据库存储)
+>
+> 以太坊用 NoSQL 数据库以 Key-Value 的形式存储所有的数据。针对账户数据结构，需要存储的数据主要包含智能合约的 Storage 和基本的账户信息。对应的存储规则如下：
+>
+> 1. 针对智能合约 Storage，将数据按照编码规则映射成 MPT，然后将 MPT 的所有节点的 Key 和 Value 构建一个 RLP List 编码作为数据库存储的 Value 值，将该 Value 值进行 Sha3 计算 hash 值作为数据库存储的 Key 值进行存储。
+> 2. 针对基本账户信息，将其对应智能合约 Storage 的 MPT Root Hash 保存于账户的 StorageRoot 属性，然后将系统中的所有 Account 构建一个 MPT。按照和 Storage 的数据库存储方式将 MPT 的所有节点进行存储。
 
 map和vector的存储则不同。
 
