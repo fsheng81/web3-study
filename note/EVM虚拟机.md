@@ -85,6 +85,8 @@ map和vector的存储则不同。
 
 （这些meta数据，能够有什么专门的方法调用得到嘛）
 
+
+
 跨合约调用：
 
 ​	call 和 delegatecall：看调用的是哪个的storage。
