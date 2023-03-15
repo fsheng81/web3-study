@@ -176,15 +176,103 @@ function sync();
 
 ### Route
 
+route是uniswap的外部包装，提供面向用户的操作方法
+
+Library
+
 ```solidity
-// 
+function sortTokens(); // 把两个token的地址按照从小到大的顺序排列
+
+function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
+	(address token0, address token1) = sortTokens(tokenA, tokenB);
+	pair = address(uint(keccak256(abi.encodePacked(
+				hex'ff',
+				factory,
+				keccak256(abi.encodePacked(token0, token1)),
+				hex'96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f'
+				// init code hash
+				))));
+} // 直接通过ABI计算pair的地址，节省gas
+
+function getReserves(); // 获取池子里面token数量
+
+function quote(); // 添加流动性时，给定 amountA ，求解 amountB
+
+function getAmountOut(); // 场景为交易时，
+// out = in * 997 * rOut / (rIn*1000 + in * 997)
+
+function getAmountIn();
+
+// 下面两个带有path
+function getAmountsOut();
+function getAmountsIn();
+```
+
+route
+
+```solidity
+function addLiquidity();
+	// 先计算能够交换的量，再进行交换，最后给LP token
+function _addLiquidity();
+function removeLiquidity();
+function _removeLiquidity();
+
+function  removeLiquidityETH();
+function  removeLiquidityWithPermit();
+function  removeLiquidityETHWithPermit();
+// 以上3个remove内部还是调用removeLiquidity
+// 带ETH的区别是，调用接收币是router，然后由路由将weth转换成eth，后将两笔币转发给用户
+// 带 Permit是EIP712 带签名信息，验证签名后，Premit里面会授权，将授权和移除在一个交易内完成
+
+function removeLiquidityETHSupportingFeeOnTransferTokens();
+function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens();
+// 这两个方法名带ETH ，调用removeLiquidity的时候，接收者是router，由路由再转给用户
+// 这两个和removeLiquidityETH的区别是：
+
+
+function swapExactTokensForTokens();
+function swapTokensForExactTokens();
+// 输入值精确，参数中会有个最小输出，作为交易限制，没有达到amountOutMin, 交易失败
+// 输出值精确，参数中会有一个amountInMax，购买精确输出时最大允许支付这个值，否则交易失败
+
+
 ```
 
 
+
+## V3
+
+主要是集中流动性这个概念，而且代码已经非常复杂了。
+
+流动性概念非常不好理解，资产的范围。
+
+tick的概念相当于是把price给划分为一系列的等比数列。而 tick_space 则是间隔，将间隔内的tick视为一个来计算
+
+
+
+
+
+不理解 LP 注入流动性时候，期望的价格范围为[Pa, Pb]，选择的池子比如说 Loop(token0, token1, fee, tickSpace)，此时该池子的价格为 Pc，这样怎么理解？LP在注入之后，应该不会导致池子价格波动。
+
+但是池子当前价格`Pc`这个值怎么确定呢？
+
+
+
+[Uniswap v3 详解（三）：交易过程 - Fantasy (paco0x.org)](https://paco0x.org/uniswap-v3-3/)
 
 
 
 ## 参考
 
 Dapp-learning-dao的 V2 V3的笔记。
+
+
+
+
+
+
+
+
+
+
 

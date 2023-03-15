@@ -77,6 +77,8 @@ deposits这些storage变量，都会记录到merkle tree中。
 > 1. 针对智能合约 Storage，将数据按照编码规则映射成 MPT，然后将 MPT 的所有节点的 Key 和 Value 构建一个 RLP List 编码作为数据库存储的 Value 值，将该 Value 值进行 Sha3 计算 hash 值作为数据库存储的 Key 值进行存储。
 > 2. 针对基本账户信息，将其对应智能合约 Storage 的 MPT Root Hash 保存于账户的 StorageRoot 属性，然后将系统中的所有 Account 构建一个 MPT。按照和 Storage 的数据库存储方式将 MPT 的所有节点进行存储。
 
+![image-20230315081410165](D:\git-repo\web-study\web3-study\note\EVM虚拟机.assets\image-20230315081410165.png)
+
 map和vector的存储则不同。
 
 
@@ -90,3 +92,35 @@ map和vector的存储则不同。
 跨合约调用：
 
 ​	call 和 delegatecall：看调用的是哪个的storage。
+
+
+
+abi.encode()编码：
+
+很多代码中都包含abi.encode()，来避免一次调用的gas开销。同时还是 assembly 的调用
+
+
+
+solidityABI编码函数：
+	abi.encode(…) returns (bytes)：计算参数的 ABI 编码。
+	abi.encodePacked(…) returns (bytes)：计算参数的紧密打包编码
+	abi. encodeWithSelector(bytes4 selector, …) returns (bytes)： 计算函数选择器和参数的 ABI 编码
+	abi.encodeWithSignature(string signature, …) returns (bytes): 等价于abi.encodeWithSelector(bytes4(keccak256(signature), …)
+
+
+
+一个 函数调用 数据的前 4 字节，指定了要调用的函数。这就是某个函数签名的 Keccak（SHA-3）哈希的前 4 字节（高位在左的大端序）
+
+执行set(21)函数 可以得到结果:
+60fe47b1 set(uint256) -这便是获取到函数签名散列截取到的前四个字节(一个字节对应16进制2个字符)
+传入参数为21 对于16进制为15
+data 最终结果： 0x60fe47b10000000000000000000000000000000000000000000000000000000000000015
+
+
+
+
+
+20-flash loan
+
+43- evm
+
