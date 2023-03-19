@@ -18,10 +18,6 @@ EVM执行的操作码 ==> 交给EVM来执行（入栈/出栈）
 2. machine state：PC、calldata、Gas、stack、memory
 3. world state：Storage
 
-外部账户信息列表 会存储在 Storage中吗？
-
-部署了一个智能合约，会对这三个区产生哪些影响？
-
 ![img](https://picx.zhimg.com/v2-c3efcc2a5ecaffb2ca4bf94e40060a52_r.jpg?source=1940ef5c)
 
 
@@ -124,3 +120,10 @@ data 最终结果： 0x60fe47b10000000000000000000000000000000000000000000000000
 
 43- evm
 
+
+
+一些关于calldata的问题
+
+
+
+从编译结果开始理解 solidity 这门语言
