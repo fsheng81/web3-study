@@ -157,18 +157,51 @@ call()调用
 uint256 res = abi.decode(data, (uint256));
 ````
 
+call() 和 delegatecall() 区别在于使用哪个的msg.sender和storage
+
+```
+userA -> call -> B -> call -> C
+in c:
+	context: C
+	msg.sender: B
+
+
+userA -> call -> B -> delegatecall -> C
+in c:
+	context: B
+	msg.sender: A
+```
+
+
+
 ### 创建新合约
 
 基本就是看create2()吧，更加可控
 
 ```solidity
+// 一般方法：new
+import ContractName.sol
+ContractName x = new ContractName{value: _value}(params)
+
+// create2()方法 能够控制具体生成的地址
+// 新地址 = hash("0xFF",创建者地址, salt, bytecode)
+// 还有不用new的方式
+bytes32 salt = keccak256(abi.encodePacked(token0, token1));
+Contract x = new Contract{salt: _salt, value: _value}(params);
+
+predictedAddress = address(uint160(uint(keccak256(abi.encodePacked(
+	bytes1(0xff),
+	address(this),
+	salt,
+	keccak256(type(Pair).creationCode)
+)))));
 ```
 
 ### 代理/升级
 
 一般还是直接继承已经写好的可升级库就好。
 
-
+uniswap的factory为了可升级的要求，而constructor()不带参数，通过initialize()来初始化
 
 ### 回调
 
@@ -252,4 +285,8 @@ sload k 	# 读取k的value到栈
 ```
 
 针对slot packing，增加与或非的操作来完成值的存取。
+
+## EIP
+
+EIP-2535 Diamonds（钻石）
 
