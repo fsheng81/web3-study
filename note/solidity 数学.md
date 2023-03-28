@@ -127,3 +127,83 @@ print(math.log(210, 2)) #
 
 ### uniswap的log计算
 
+
+
+## 指数计算
+
+目标：$y = 2^x$ ，其中$x$是Q64.64形式的小数
+
+计算：将$x = n + f$分为整数部分与小数部分，把小数部分按照2为底拆分：
+
+$f = f_i * 2^{-1} + f_2 * 2^{-2} + ..., f_i = {0, 1}$
+
+由于都是2的负指数，所以都是开根号的形式：
+
+$2^{f} = \prod{2^{f_i * 2^{-i}}}$ ，如果$f_i = 1, $ 则需要乘上一个 $2^{2^{-i}}$ 
+
+```solidity
+function exp_2 (int128 x) internal pure returns (int128) {
+    unchecked {
+      require (x < 0x400000000000000000); // Overflow
+      if (x < -0x400000000000000000) return 0; // Underflow
+	  
+	  // 0.5 in Q128.128
+      uint256 result = 0x80000000000000000000000000000000;
+
+	  // 依次判断小数位是否为1，即 f_i == 1
+      if (x & 0x8000000000000000 > 0)
+        // 1.0 * 0x16A09E667F3BCC908B2FB1366EA957D3E / (1 << 128)
+        // = 1.4142135623730951 = 2^(-1)
+        result = result * 0x16A09E667F3BCC908B2FB1366EA957D3E >> 128;
+      if (x & 0x4000000000000000 > 0)
+        result = result * 0x1306FE0A31B7152DE8D5A46305C85EDEC >> 128;
+	  // ......
+      if (x & 0x1 > 0)
+        result = result * 0x10000000000000000B17217F7D1CF79AB >> 128;
+
+	  // 把128位小数转成64位小数
+      result >>= uint256 (int256 (63 - (x >> 64)));
+      require (result <= uint256 (int256 (MAX_64x64)));
+
+      return int128 (int256 (result));
+    }
+  }
+
+```
+
+https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.sol
+
+### uniswap的指数计算
+
+uniswap中需要计算的指数计算是从tick计算sqrtprice：$sqrtPrice = 1.0001^{\frac{tick}{2}}$ 
+
+可以通过换底的方式改成以2为指数底：$1.0001^{\frac{tick}{2}} = 2^{\frac{tick}{2}\log_{2}{1.0001}}$
+
+代码注解：
+
+```solidity
+function getSqrtRatioAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
+	uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
+	require(absTick <= uint256(uint24(MAX_TICK)), 'T');
+
+	// 1.0 in Q128.128
+	uint256 ratio = 0x100000000000000000000000000000000;
+
+	// 0xfffcb933bd6fad37aa2d162d1a594001 * 1.0 / (1 << 128)
+	// = 0.9999500037496876 = pow(1.0001, -0.5)
+	// 0xfff97272373d413259a46990580e213a * 1.0 / (1 << 128)
+	// = 0.9999000099990001 = pow(1.0001, -1.0)
+	if (absTick & 0x1 != 0) ratio = (ratio * 0xfffcb933bd6fad37aa2d162d1a594001) >> 128;
+	if (absTick & 0x2 != 0) ratio = (ratio * 0xfff97272373d413259a46990580e213a) >> 128;
+	if (absTick & 0x4 != 0) ratio = (ratio * 0xfff2e50f5f656932ef12357cf3c7fdcc) >> 128;
+	// ........
+	if (absTick & 0x80000 != 0) ratio = (ratio * 0x48a170391f7dc42444e8fa2) >> 128;
+	// 由于tick的范围是int24 因此最多只到23位即可
+
+	// 如果tick是正数，则需要取导数
+	if (tick > 0) ratio = type(uint256).max / ratio;
+	// 把 Q128.128 转换为 Q64.96 改变小数位
+	sqrtPriceX96 = uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1));
+}
+```
+
